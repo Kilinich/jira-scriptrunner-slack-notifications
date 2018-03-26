@@ -1,7 +1,6 @@
 // Slack notification script for Jira Scriptrunner plugin by Kilinich
 // Usage: Paste in Script Listeners firing on Issue Updated event
 // Notifying approvers and watchers
-//
 def doNotNotifyList = ['robot-manager']
 // Field IDs for our instance of Jira 
 def reqTypeField = 'customfield_10016'
@@ -21,9 +20,9 @@ def postSlackMsg(toChannel, msg, attach ='') {
     logger.info("Slack message to [$toChannel] '${msg.take(50)}...' $resp")       
 }
 // Detect if issue is just transitioned
+def issueType = issue.fields.issuetype.name
+def reqType = issue.fields."$reqTypeField" ? issue.fields."$reqTypeField".requestType.name : issueType
 if (changelog.items.find{it.field.equals('status')}) {
-    def issueType = issue.fields.issuetype.name
-    def reqType = issue.fields."$reqTypeField" ? issue.fields."$reqTypeField".requestType.name : issueType
     def issueDone = changelog.items.find{it.field.equals('status')}.toString.equals('Done')
     logger.info("Issue [$issueType] request [$reqType] is done: $issueDone")
     // Detect if issue require approval and get approvers
@@ -57,4 +56,11 @@ if (changelog.items.find{it.field.equals('status')}) {
             postSlackMsg("@$watcher", ":coffee: *Work is done*\n<$JIRA_SD_URL$issue.key|$issue.key: ${issue.fields.summary.take(80)}>\n$reqType from <@$issue.fields.reporter.name> resolved by <@$user.name>, you are watching it so take a look if you want.", issue.fields.description)
         }
     }
+}
+// Notify on assign
+if (changelog.items.find{it.field.equals('assignee') && issue.fields.assignee}) {
+    logger.info("Assignee changed to: [$issue.fields.assignee.name] by [$user.name]")    
+    if (user.name != issue.fields.assignee.name) {
+        postSlackMsg("@$issue.fields.assignee.name", ":hammer_and_pick: *$issueType assigned to you by* <@$user.name>\n<$JIRA_SD_URL$issue.key|$issue.key: ${issue.fields.summary.take(80)}>", issue.fields.description) 
+    }    
 }

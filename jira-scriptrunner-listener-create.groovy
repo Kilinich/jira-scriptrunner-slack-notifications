@@ -23,7 +23,6 @@ def postSlackMsg(toChannel, msg, attach ='') {
     .asString().statusText
     logger.info("Slack message to [$toChannel] '${msg.take(50)}...' $resp")       
 }
-// Get request issue type and request type if exists, components 
 def issueType = issue.fields.issuetype.name
 def reqType = issue.fields."$reqTypeField" ? issue.fields."$reqTypeField".requestType.name : issueType
 def components = issue.fields.components.collect{it.name}
